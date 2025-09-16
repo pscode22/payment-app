@@ -1,0 +1,72 @@
+# =========================
+node_modules          # dependencies
+dist/                   # compiled output
+build/                  # build folder
+.env                     # environment variables
+.env.local
+.env.*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json        # optionally, if using yarn/pnpm
+yarn.lock
+.pnpm-debug.log*
+
+# =========================
+# Frontend / UI
+# =========================
+# React / Next.js / Vue / Angular
+.next/
+out/
+.nuxt/
+dist/
+.cache/
+.vite/
+*.local
+*.log
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# IDE / Editor
+# =========================
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# =========================
+# TypeScript
+# =========================
+*.tsbuildinfo
+
+# =========================
+# Logs
+# =========================
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# =========================
+# Testing
+# =========================
+coverage/
+*.lcov
+
+# =========================
+# Misc
+# =========================
+*.bak
+*.swp
+*.tmp
+*.pid
+*.seed
+.Dockerfile.swp
