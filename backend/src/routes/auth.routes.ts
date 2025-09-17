@@ -15,8 +15,15 @@ import {
   signRefreshToken,
   verifyRefreshToken,
 } from "../utils/jwt";
+import { Account } from "@/models/account.model";
 
 const router = Router();
+
+const generateTokens = (userId: string, sessionExp: number) => {
+  const accessToken = signAccessToken(userId);
+  const refreshToken = signRefreshToken(userId, sessionExp);
+  return { accessToken, refreshToken };
+};
 
 /** 🌱 Register */
 router.post("/register", async (req, res) => {
@@ -41,6 +48,32 @@ router.post("/register", async (req, res) => {
     firstName,
     lastName,
   });
+
+  /// ----- Create new account ------
+  await Account.create({
+    userId: user._id,
+    balance: 1 + Math.random() * 10000,
+  });
+
+  /// ----- Login ------
+  const sessionExp = Date.now() + 7 * 24 * 60 * 60 * 1000;
+  const { accessToken, refreshToken } = generateTokens(
+    user._id.toString(),
+    sessionExp
+  );
+
+  await RefreshToken.create({
+    userId: user._id,
+    token: refreshToken,
+    sessionExp,
+  });
+
+  res.json({
+    message: "User created successfully.",
+    accessToken,
+    refreshToken,
+  });
+
   res.status(201).json({ userId: user._id });
 });
 
@@ -48,7 +81,7 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   try {
     const parsed = loginSchema.safeParse(req.body);
-    
+
     if (!parsed.success) {
       res.status(400).json({ errors: parsed.error.issues });
       return;
@@ -61,12 +94,16 @@ router.post("/login", async (req, res) => {
       return;
     }
 
-    const sessionExp = Date.now() + 7 * 24 * 60 * 60 * 1000;
-    await RefreshToken.deleteMany({ userId: user._id }); // clear old session
+    // clear old refresh token session
+    await RefreshToken.deleteMany({ userId: user._id }); 
 
-    console.log({ user });
-    const accessToken = signAccessToken(user._id.toString());
-    const refreshToken = signRefreshToken(user._id.toString(), sessionExp);
+    // generate new tokens
+    const sessionExp = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    const { accessToken, refreshToken } = generateTokens(
+      user._id.toString(),
+      sessionExp
+    );
+
     await RefreshToken.create({
       userId: user._id,
       token: refreshToken,
