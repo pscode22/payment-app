@@ -1,74 +1,130 @@
-import { Router } from 'express';
-import bcrypt from 'bcryptjs';
-import { User } from '../models/user.model';
-import { RefreshToken } from '../models/refreshToken.model';
-import { registerSchema, loginSchema, refreshSchema, RegisterInput, LoginInput, RefreshInput } from '../schemas/auth.schemas';
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt';
-import { AuthRequest } from '../middleware/auth';
+import { Router } from "express";
+import bcrypt from "bcryptjs";
+import { User } from "../models/user.model";
+import { RefreshToken } from "../models/refreshToken.model";
+import {
+  registerSchema,
+  loginSchema,
+  refreshSchema,
+  RegisterInput,
+  LoginInput,
+  RefreshInput,
+} from "../schemas/auth.schemas";
+import {
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+} from "../utils/jwt";
 
 const router = Router();
 
 /** 🌱 Register */
-router.post('/register', async (req, res) => {
+router.post("/register", async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ errors: parsed.error.issues }); return; }
-  const { email, password }: RegisterInput = parsed.data;
+  console.log({ parsed, body: req.body });
+  if (!parsed.success) {
+    res.status(400).json({ errors: parsed.error.issues });
+    return;
+  }
+  const { email, password, firstName, lastName }: RegisterInput = parsed.data;
 
   const exists = await User.findOne({ email });
-  if (exists) { res.status(400).json({ error: 'Email already used' }); return; }
+  if (exists) {
+    res.status(400).json({ error: "Email already used" });
+    return;
+  }
 
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await User.create({ email, passwordHash });
+  const user = await User.create({
+    email,
+    password: passwordHash,
+    firstName,
+    lastName,
+  });
   res.status(201).json({ userId: user._id });
 });
 
 /** 🔑 Login */
-router.post('/login', async (req, res) => {
-  const parsed = loginSchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ errors: parsed.error.issues }); return; }
-  const { email, password }: LoginInput = parsed.data;
+router.post("/login", async (req, res) => {
+  try {
+    const parsed = loginSchema.safeParse(req.body);
+    
+    if (!parsed.success) {
+      res.status(400).json({ errors: parsed.error.issues });
+      return;
+    }
+    const { email, password }: LoginInput = parsed.data;
 
-  const user = await User.findOne({ email });
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-    res.status(400).json({ error: 'Invalid credentials' }); return;
+    const user = await User.findOne({ email });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      res.status(400).json({ error: "Invalid credentials" });
+      return;
+    }
+
+    const sessionExp = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    await RefreshToken.deleteMany({ userId: user._id }); // clear old session
+
+    console.log({ user });
+    const accessToken = signAccessToken(user._id.toString());
+    const refreshToken = signRefreshToken(user._id.toString(), sessionExp);
+    await RefreshToken.create({
+      userId: user._id,
+      token: refreshToken,
+      sessionExp,
+    });
+
+    res.json({ accessToken, refreshToken });
+  } catch (error) {
+    res.json({ error: "Login failed", details: error });
   }
-
-  const sessionExp = Date.now() + 7 * 24 * 60 * 60 * 1000;
-  await RefreshToken.deleteMany({ userId: user._id }); // clear old session
-  const accessToken = signAccessToken(user._id.toString());
-  const refreshToken = signRefreshToken(user._id.toString(), sessionExp);
-  await RefreshToken.create({ userId: user._id, token: refreshToken, sessionExp });
-
-  res.json({ accessToken, refreshToken });
 });
 
 /** ♻️ Refresh */
-router.post('/refresh', async (req, res) => {
+router.post("/refresh", async (req, res) => {
   const parsed = refreshSchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ errors: parsed.error.issues }); return; }
+  if (!parsed.success) {
+    res.status(400).json({ errors: parsed.error.issues });
+    return;
+  }
   const { refreshToken }: RefreshInput = parsed.data;
 
   try {
     const payload = verifyRefreshToken(refreshToken);
     const stored = await RefreshToken.findOne({ userId: payload.userId });
-    if (!stored || stored.token !== refreshToken) { res.status(401).json({ error: 'Invalid token' }); return; }
-    if (Date.now() > stored.sessionExp) { await stored.deleteOne(); res.status(401).json({ error: 'Session expired' }); return; }
+    if (!stored || stored.token !== refreshToken) {
+      res.status(401).json({ error: "Invalid token" });
+      return;
+    }
+    if (Date.now() > stored.sessionExp) {
+      await stored.deleteOne();
+      res.status(401).json({ error: "Session expired" });
+      return;
+    }
 
     const newAccess = signAccessToken(payload.userId);
     const newRefresh = signRefreshToken(payload.userId, stored.sessionExp);
-    stored.token = newRefresh; await stored.save();
+    stored.token = newRefresh;
+    await stored.save();
 
     res.json({ accessToken: newAccess, refreshToken: newRefresh });
-  } catch { res.status(401).json({ error: 'Refresh failed' }); }
+  } catch {
+    res.status(401).json({ error: "Refresh failed" });
+  }
 });
 
 /** 🚪 Logout */
-router.post('/logout', async (req, res) => {
+router.post("/logout", async (req, res) => {
   const parsed = refreshSchema.safeParse(req.body);
-  if (!parsed.success) { res.status(400).json({ errors: parsed.error.issues }); return; }
+  if (!parsed.success) {
+    res.status(400).json({ errors: parsed.error.issues });
+    return;
+  }
   const { refreshToken }: RefreshInput = parsed.data;
-  try { const payload = verifyRefreshToken(refreshToken); await RefreshToken.deleteMany({ userId: payload.userId }); } catch {}
-  res.json({ message: 'Logged out' });
+  try {
+    const payload = verifyRefreshToken(refreshToken);
+    await RefreshToken.deleteMany({ userId: payload.userId });
+  } catch {}
+  res.json({ message: "Logged out" });
 });
 
 export default router;

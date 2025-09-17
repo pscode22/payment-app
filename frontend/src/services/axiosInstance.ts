@@ -5,6 +5,7 @@ import axios, {
   type AxiosResponse,
   type InternalAxiosRequestConfig,
 } from "axios";
+
 import {
   getAccessToken,
   getRefreshToken,
@@ -21,15 +22,24 @@ const api: AxiosInstance = axios.create({
 // Promise to queue refresh calls
 let refreshPromise: Promise<void> | null = null;
 
-// 🔑 REQUEST INTERCEPTOR — attach access token
+
+// 📝 Public endpoints (no Authorization header)
+const publicPaths = ['/login', '/register', '/refresh'];
+
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const token = getAccessToken();
-  if (token) {
-    config.headers = config.headers ?? {};
-    config.headers.Authorization = `Bearer ${token}`;
+  // Check whether the URL matches any public path
+  const isPublic = publicPaths.some((path) => config.url?.startsWith(path));
+
+  if (!isPublic) {
+    const token = getAccessToken();
+    if (token) {
+      config.headers = config.headers ?? {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
   return config;
 });
+
 
 // 🔄 REFRESH
 const doRefresh = async (): Promise<void> => {
@@ -62,10 +72,21 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config;
 
+    // If no response or no originalRequest, just reject
+    if (!error.response || !originalRequest) return Promise.reject(error);
+
+    const status = error.response.status;
+    const isRefreshRequest = originalRequest.url?.includes('/refresh');
+
+    // Only refresh if:
+    //  - status is 401
+    //  - we have a refresh token
+    //  - not already retried
+    //  - not the refresh endpoint itself
     if (
-      error.response?.status === 401 &&
+      status === 401 &&
+      !isRefreshRequest &&
       getRefreshToken() &&
-      originalRequest &&
       !(originalRequest as unknown as Record<string, unknown>)._retry
     ) {
       (originalRequest as unknown as Record<string, unknown>)._retry = true;
@@ -84,8 +105,10 @@ api.interceptors.response.use(
         return Promise.reject(err);
       }
     }
+
     return Promise.reject(error);
   }
 );
+
 
 export default api;
