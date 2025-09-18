@@ -3,28 +3,41 @@ import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
-import { defineConfig, globalIgnores } from "eslint/config";
+import { defineConfig } from "eslint/config";
 
 export default defineConfig([
   // Global ignores
   {
     ignores: ["dist/**", "build/**", "node_modules/**", "*.config.js"],
   },
+
+  // TS recommended configs
   ...tseslint.configs.recommendedTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
+
+  // Our TypeScript + React files
   {
     files: ["**/*.{ts,tsx}"],
+    // ✅ Add parser + plugins so ESLint understands JSX/TS
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: "module",
+      ecmaFeatures: {
+        jsx: true,
+      },
+      globals: globals.browser,
+      parser: tseslint.parser, // ✅ needed for @typescript-eslint rules
+    },
+    plugins: {
+      "react-hooks": reactHooks,
+      "react-refresh": reactRefresh,
+    },
     extends: [
       js.configs.recommended,
       tseslint.configs.recommended,
       reactHooks.configs["recommended-latest"],
       reactRefresh.configs.vite,
     ],
-    languageOptions: {
-      ecmaVersion: 2020,
-      globals: globals.browser,
-    },
-
     rules: {
       // React Hooks rules
       ...reactHooks.configs.recommended.rules,
@@ -35,12 +48,16 @@ export default defineConfig([
         { allowConstantExport: true },
       ],
 
-      // TypeScript specific rules
+      // ✅ TypeScript specific rules
+      // Allow prefix underscore to ignore unused vars
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
+          vars: "all",
+          args: "after-used",
+          ignoreRestSiblings: true,
+          varsIgnorePattern: "^_", // import { Routes as _Routes } fix
           argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
         },
       ],
       "@typescript-eslint/consistent-type-imports": [
