@@ -1,19 +1,31 @@
-// After login
-import { setTokens, clearTokens, getRefreshToken } from "../authTokens";
 import api from "../axiosInstance";
+import { clearTokens, getRefreshToken } from "../authTokens";
+import {
+  loginSchema,
+  signupSchema,
+  tokensSchema,
+  type LoginPayload,
+  type SignupPayload,
+  type Tokens,
+} from "@/types/auth";
 
-export const login = async (email: string, password: string): Promise<void> => {
-  const res = await api.post<{ accessToken: string; refreshToken: string }>(
-    "/login",
-    {
-      email,
-      password,
-    }
-  );
-  setTokens(res.data);
+export const login = async (email: string, password: string): Promise<Tokens> => {
+  const body: LoginPayload = loginSchema.parse({ email, password });
+  const res = await api.post("/login", body);
+  const parsed = tokensSchema.safeParse(res.data);
+  if (!parsed.success) throw new Error("Invalid login response");
+  return parsed.data;
 };
 
-export const logout = async (): Promise<void> => {
+export const signup = async (payload: SignupPayload): Promise<Tokens> => {
+  signupSchema.parse(payload);
+  const res = await api.post("/register", payload);
+  const parsed = tokensSchema.safeParse(res.data);
+  if (!parsed.success) throw new Error("Invalid signup response");
+  return parsed.data;
+};
+
+export const logout = async () => {
   const refreshToken = getRefreshToken();
   if (refreshToken) {
     await api.post("/logout", { refreshToken });

@@ -1,7 +1,12 @@
-import { Navigate, Outlet } from "react-router-dom";
-import { isLoggedIn } from "@/lib/auth";
+// PublicRoute.tsx
+import { Navigate, useLocation } from "react-router-dom";
+import { useAuth } from "@/context/AuthContext";
+import type { JSX } from "react";
 
-export default function PublicRoute() {
-  // if user already logged in, redirect to /dashboard
-  return isLoggedIn() ? <Navigate to="/dashboard" replace /> : <Outlet />;
+export default function PublicRoute({ children }: { children: JSX.Element }) {
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
+  const from = (location.state as { from?: Location })?.from?.pathname ?? "/dashboard";
+  if (isAuthenticated) return <Navigate to={from} replace />;
+  return children;
 }
