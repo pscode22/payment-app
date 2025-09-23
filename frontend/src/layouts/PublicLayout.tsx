@@ -1,7 +1,19 @@
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import { ModeToggle } from "@/components/mode-toggle";
+import { useAuth } from "@/context/AuthContext";
+import { useEffect } from "react";
 
 export default function PublicLayout() {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+      return;
+    }
+  }, [isAuthenticated,]);
+
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Dark mode toggle top-right */}
@@ -11,6 +23,7 @@ export default function PublicLayout() {
 
       {/* 📱 Content — full flex grow */}
       <main className="flex-1 flex items-center justify-center overflow-hidden">
+        {/* {children ?? <Outlet />} */}
         <Outlet />
       </main>
 

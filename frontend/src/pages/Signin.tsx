@@ -27,7 +27,7 @@ export default function Signin() {
   const onSubmit = async (data: SigninForm) => {
     const res = await loginApi(data.email, data.password);
     setTokens(res);
-    login();
+    login(res.accessToken);
   };
 
   return (

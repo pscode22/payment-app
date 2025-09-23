@@ -28,7 +28,6 @@ const generateTokens = (userId: string, sessionExp: number) => {
 /** 🌱 Register */
 router.post("/register", async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
-  console.log({ parsed, body: req.body });
   if (!parsed.success) {
     res.status(400).json({ errors: parsed.error.issues });
     return;
@@ -134,7 +133,7 @@ router.post("/refresh", async (req, res) => {
     }
     if (Date.now() > stored.sessionExp) {
       await stored.deleteOne();
-      res.status(401).json({ error: "Session expired" });
+      res.status(401).json({ error: "Session expired : Refresh Token" });
       return;
     }
 

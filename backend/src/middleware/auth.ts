@@ -9,7 +9,6 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
   const token = header.slice(7);
   try {
     const payload = verifyAccessToken(token);
-    console.log(payload)
     req.userId = payload.userId;
     next();
   } catch {

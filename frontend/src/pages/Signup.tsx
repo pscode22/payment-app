@@ -25,7 +25,7 @@ export default function Signup() {
   const onSubmit = async (data: SignupForm) => {
     const res = await signup(data);
     setTokens(res);
-    login();
+    login(res.accessToken);
   };
 
   return (
