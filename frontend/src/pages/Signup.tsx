@@ -7,6 +7,8 @@ import { setTokens } from "@/services/authTokens";
 import { useAuth } from "@/context/AuthContext";
 import { Link } from "react-router-dom";
 import { signup } from "@/services/api/auth.api";
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 
 const signupSchema = z.object({
   email: z.email({ message: "Invalid email" }),
@@ -18,7 +20,13 @@ type SignupForm = z.infer<typeof signupSchema>;
 
 export default function Signup() {
   const { login } = useAuth();
-  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<SignupForm>({
+  const [showPassword, setShowPassword] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<SignupForm>({
     resolver: zodResolver(signupSchema),
   });
 
@@ -37,22 +45,43 @@ export default function Signup() {
 
       <div>
         <Input placeholder="Email" {...register("email")} />
-        {errors.email && <p className="text-red-500 text-xs">{errors.email.message}</p>}
+        {errors.email && (
+          <p className="text-red-500 text-xs">{errors.email.message}</p>
+        )}
       </div>
 
       <div>
         <Input placeholder="First Name" {...register("firstName")} />
-        {errors.firstName && <p className="text-red-500 text-xs">{errors.firstName.message}</p>}
+        {errors.firstName && (
+          <p className="text-red-500 text-xs">{errors.firstName.message}</p>
+        )}
       </div>
 
       <div>
         <Input placeholder="Last Name" {...register("lastName")} />
-        {errors.lastName && <p className="text-red-500 text-xs">{errors.lastName.message}</p>}
+        {errors.lastName && (
+          <p className="text-red-500 text-xs">{errors.lastName.message}</p>
+        )}
       </div>
 
-      <div>
-        <Input type="password" placeholder="Password" {...register("password")} />
-        {errors.password && <p className="text-red-500 text-xs">{errors.password.message}</p>}
+      {/* Password with toggle */}
+      <div className="relative">
+        <Input
+          type={showPassword ? "text" : "password"}
+          placeholder="Password"
+          {...register("password")}
+          className="pr-10"
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword((prev) => !prev)}
+          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+        >
+          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+        {errors.password && (
+          <p className="text-red-500 text-xs">{errors.password.message}</p>
+        )}
       </div>
 
       <Button disabled={isSubmitting} type="submit" className="w-full">

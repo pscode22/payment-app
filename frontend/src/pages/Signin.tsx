@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Eye, EyeOff } from "lucide-react";
 import { login as loginApi } from "@/services/api/auth.api";
 import { useAuth } from "@/context/AuthContext";
 import { Link } from "react-router-dom";
@@ -16,6 +18,8 @@ type SigninForm = z.infer<typeof signinSchema>;
 
 export default function Signin() {
   const { login } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+
   const {
     register,
     handleSubmit,
@@ -37,6 +41,7 @@ export default function Signin() {
     >
       <h2 className="text-center text-xl font-bold">🔑 Sign In</h2>
 
+      {/* Email */}
       <div>
         <Input type="email" placeholder="Email" {...register("email")} />
         {errors.email && (
@@ -44,12 +49,21 @@ export default function Signin() {
         )}
       </div>
 
-      <div>
+      {/* Password with toggle */}
+      <div className="relative">
         <Input
-          type="password"
+          type={showPassword ? "text" : "password"}
           placeholder="Password"
           {...register("password")}
+          className="pr-10"
         />
+        <button
+          type="button"
+          onClick={() => setShowPassword((prev) => !prev)}
+          className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+        >
+          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
         {errors.password && (
           <p className="text-red-500 text-xs">{errors.password.message}</p>
         )}
@@ -59,7 +73,7 @@ export default function Signin() {
         🚀 Login
       </Button>
 
-      {/* 🔹 Prompt section */}
+      {/* Prompt section */}
       <p className="text-center text-sm text-muted-foreground">
         New here?{" "}
         <Link to="/signup" className="text-primary hover:underline">

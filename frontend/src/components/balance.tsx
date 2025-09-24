@@ -1,8 +1,18 @@
-export const Balance = ({ value }: { value: number }) => {
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface BalanceProps {
+  value: number;
+}
+
+export function Balance({ value }: BalanceProps) {
   return (
-    <div className="flex">
-      <div className="font-bold text-lg">Your balance</div>
-      <div className="font-semibold ml-4 text-lg">Rs {value}</div>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold">Your balance</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-2xl font-bold">₹ {value.toLocaleString()}</p>
+      </CardContent>
+    </Card>
   );
-};
+}
