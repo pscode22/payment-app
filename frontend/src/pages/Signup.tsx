@@ -9,6 +9,9 @@ import { Link } from "react-router-dom";
 import { signup } from "@/services/api/auth.api";
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
+import { AxiosError } from "axios";
+import { getProfile } from "@/services/api/user.api";
+import { useUser } from "@/context/UserContext";
 
 const signupSchema = z.object({
   email: z.email({ message: "Invalid email" }),
@@ -20,7 +23,9 @@ type SignupForm = z.infer<typeof signupSchema>;
 
 export default function Signup() {
   const { login } = useAuth();
+  const { setUser } = useUser();
   const [showPassword, setShowPassword] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const {
     register,
@@ -31,9 +36,24 @@ export default function Signup() {
   });
 
   const onSubmit = async (data: SignupForm) => {
-    const res = await signup(data);
-    setTokens(res);
-    login(res.accessToken);
+    try {
+      setServerError(null);
+      const res = await signup(data);
+      setTokens(res);
+      login(res.accessToken);
+
+      // ✅ fetch profile immediately and update context + localStorage
+      const profile = await getProfile();
+      setUser(profile.user);
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+
+      setServerError(
+        err.response?.data?.message ||
+          (err.response?.data as unknown as { error: string }).error ||
+          "Login failed. Please check your credentials."
+      );
+    }
   };
 
   return (
@@ -42,6 +62,11 @@ export default function Signup() {
       className="w-full max-w-sm mx-auto space-y-4 p-4 bg-card rounded-xl shadow-md"
     >
       <h2 className="text-center text-xl font-bold">📝 Sign Up</h2>
+
+      {/* Backend error */}
+      {serverError && (
+        <p className="text-red-500 text-sm text-center">{serverError}</p>
+      )}
 
       <div>
         <Input placeholder="Email" {...register("email")} />
@@ -88,7 +113,6 @@ export default function Signup() {
         🚀 Register
       </Button>
 
-      {/* 🔹 Prompt section */}
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
         <Link to="/signin" className="text-primary hover:underline">

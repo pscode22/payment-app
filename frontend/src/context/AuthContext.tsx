@@ -55,6 +55,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log("Logout API failed, clearing tokens anyway");
     }
     clearTokens();
+    localStorage.clear()
     setIsAuthenticated(false);
   };
 

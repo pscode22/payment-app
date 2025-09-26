@@ -9,6 +9,9 @@ import { login as loginApi } from "@/services/api/auth.api";
 import { useAuth } from "@/context/AuthContext";
 import { Link } from "react-router-dom";
 import { setTokens } from "@/services/authTokens";
+import type { AxiosError } from "axios";
+import { useUser } from "@/context/UserContext";
+import { getProfile } from "@/services/api/user.api";
 
 const signinSchema = z.object({
   email: z.email({ message: "Invalid email" }),
@@ -18,7 +21,9 @@ type SigninForm = z.infer<typeof signinSchema>;
 
 export default function Signin() {
   const { login } = useAuth();
+  const { setUser } = useUser();
   const [showPassword, setShowPassword] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const {
     register,
@@ -29,9 +34,24 @@ export default function Signin() {
   });
 
   const onSubmit = async (data: SigninForm) => {
-    const res = await loginApi(data.email, data.password);
-    setTokens(res);
-    login(res.accessToken);
+    try {
+      setServerError(null);
+      const res = await loginApi(data.email, data.password);
+      setTokens(res);
+      login(res.accessToken);
+
+      // ✅ fetch profile immediately and update context + localStorage
+      const profile = await getProfile();
+      setUser(profile.user);
+    } catch (error: unknown) {
+      const err = error as AxiosError<{ message: string }>;
+
+      setServerError(
+        err.response?.data?.message ||
+          (err.response?.data as unknown as { error: string }).error ||
+          "Login failed. Please check your credentials."
+      );
+    }
   };
 
   return (
@@ -41,7 +61,11 @@ export default function Signin() {
     >
       <h2 className="text-center text-xl font-bold">🔑 Sign In</h2>
 
-      {/* Email */}
+      {/* Backend error */}
+      {serverError && (
+        <p className="text-red-500 text-sm text-center">{serverError}</p>
+      )}
+
       <div>
         <Input type="email" placeholder="Email" {...register("email")} />
         {errors.email && (
@@ -73,7 +97,6 @@ export default function Signin() {
         🚀 Login
       </Button>
 
-      {/* Prompt section */}
       <p className="text-center text-sm text-muted-foreground">
         New here?{" "}
         <Link to="/signup" className="text-primary hover:underline">
