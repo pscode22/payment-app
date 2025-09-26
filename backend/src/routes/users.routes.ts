@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { authMiddleware, AuthRequest } from "../middleware/auth";
 import { User } from "../models/user.model";
+import { Account } from "@/models/account.model";
+import { RefreshToken } from "@/models/refreshToken.model";
 
 const router = Router();
 
@@ -10,7 +12,7 @@ router.get("/profile", authMiddleware, async (req: AuthRequest, res) => {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
-  const user = await User.findById(req.userId).select("email");
+  const user = await User.findById(req.userId).select("email firstName lastName");
   res.json({ user });
 });
 
@@ -32,6 +34,29 @@ router.post("/all", authMiddleware, async (req: AuthRequest, res) => {
   }).select("_id firstName lastName");
 
   res.json({ users });
+});
+
+/** ❌ Delete Account */
+router.delete("/account", async (req: AuthRequest, res) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const userId = req.userId;
+
+    // Delete linked collections
+    await Promise.all([
+      User.findByIdAndDelete(userId),
+      Account.deleteOne({ userId }),
+      RefreshToken.deleteMany({ userId }),
+    ]);
+
+    return res.json({ message: "Account deleted successfully." });
+  } catch (err) {
+    console.error("Delete account error:", err);
+    return res.status(500).json({ error: "Failed to delete account." });
+  }
 });
 
 export default router;

@@ -34,10 +34,16 @@ router.post("/register", async (req, res) => {
   }
   const { email, password, firstName, lastName }: RegisterInput = parsed.data;
 
-  const exists = await User.findOne({ email });
-  if (exists) {
-    res.status(400).json({ error: "Email already used" });
-    return;
+  const emailExists = await User.findOne({ email });
+  if (emailExists) {
+     res.status(400).json({ error: "Email already exists." });
+     return;
+  }
+
+  const nameExists = await User.findOne({ firstName, lastName });
+  if (nameExists) {
+     res.status(400).json({ error: "Name already taken." });
+     return;
   }
 
   const passwordHash = await bcrypt.hash(password, 10);
@@ -94,7 +100,7 @@ router.post("/login", async (req, res) => {
     }
 
     // clear old refresh token session
-    await RefreshToken.deleteMany({ userId: user._id }); 
+    await RefreshToken.deleteMany({ userId: user._id });
 
     // generate new tokens
     const sessionExp = Date.now() + 7 * 24 * 60 * 60 * 1000;
