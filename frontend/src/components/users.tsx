@@ -7,7 +7,6 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -15,25 +14,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { GetUser } from "@/types/user";
+import { TransferModal } from "./transferModal";
 
 interface UsersProps {
   users: GetUser[];
-  onSendMoney: (userId: string) => void;
   query: string;
   setQuery: (val: string) => void;
   isLoading?: boolean;
   error?: unknown;
+  onTransferSuccess?: () => void; // Callback to refresh data
 }
 
 const USERS_PER_PAGE = 4;
 
 export function Users({
   users,
-  onSendMoney,
   query,
   setQuery,
   isLoading = false,
   error,
+  onTransferSuccess,
 }: UsersProps) {
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -52,6 +52,11 @@ export function Users({
     setCurrentPage(1);
   };
 
+  // Handle successful transfer - refresh balance and call parent callback
+  const handleTransferSuccess = () => {
+    onTransferSuccess?.();
+  };
+
   const renderUserSkeleton = () => (
     <div className="space-y-3">
       {[...Array(3)].map((_, i) => (
@@ -60,7 +65,6 @@ export function Users({
             <Skeleton className="h-10 w-10 rounded-full" />
             <div className="space-y-1">
               <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-3 w-24" />
             </div>
           </div>
           <Skeleton className="h-9 w-24" />
@@ -78,7 +82,7 @@ export function Users({
           </div>
           <h3 className="text-lg font-semibold mb-2">No users found</h3>
           <p className="text-muted-foreground text-sm max-w-sm">
-            We couldn't find any users matching "{query}". Try adjusting your search terms.
+            We couldn't find any users matching "{query}".
           </p>
         </div>
       );
@@ -104,7 +108,7 @@ export function Users({
       </div>
       <h3 className="text-lg font-semibold mb-2 text-destructive">Failed to load users</h3>
       <p className="text-muted-foreground text-sm max-w-sm">
-        Something went wrong while loading the user list. Please try again.
+        Something went wrong while loading the user list.
       </p>
     </div>
   );
@@ -128,9 +132,7 @@ export function Users({
             <ChevronLeft className="h-4 w-4" />
           </Button>
           
-          <span className="text-sm px-2">
-            {currentPage}
-          </span>
+          <span className="text-sm px-2">{currentPage}</span>
           
           <Button
             variant="outline"
@@ -202,14 +204,12 @@ export function Users({
                   </div>
                 </div>
                 
-                <Button 
-                  size="sm" 
-                  onClick={() => onSendMoney(user._id)}
-                  className="flex items-center gap-2"
-                >
-                  <Send className="h-4 w-4" />
-                  Send
-                </Button>
+                <TransferModal user={user} onSuccess={handleTransferSuccess}>
+                  <Button size="sm" className="flex items-center gap-2">
+                    <Send className="h-4 w-4" />
+                    Send
+                  </Button>
+                </TransferModal>
               </div>
             ))
           )}

@@ -20,8 +20,10 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import TransactionHistory from "@/components/transactionHistory";
 
 interface UserProfile {
+  _id: string; // Add user ID for transactions
   email: string;
   firstName: string;
   lastName: string;
@@ -58,8 +60,6 @@ export default function Profile() {
       setIsDeleting(false);
     }
   };
-
-console.log({isLoading, error, userData})
 
   const renderProfileContent = () => {
     if (isLoading) {
@@ -128,60 +128,71 @@ console.log({isLoading, error, userData})
   };
 
   return (
-    <div className="container max-w-2xl mx-auto p-6">
+    <div className="container max-w-4xl mx-auto p-6">
       <div className="space-y-6">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold tracking-tight">Profile</h1>
         </div>
 
-        {renderProfileContent()}
-
-        <div className="flex items-center justify-between pt-4">
-          <Button
-            variant="outline"
-            onClick={() => navigate("/dashboard")}
-            className="flex items-center gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Button>
-
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" className="flex items-center gap-2">
-                <Trash2 className="h-4 w-4" />
-                Delete Account
+        <div className="flex flex-col gap-10">
+          {/* Profile Information */}
+          <div className="space-y-4">
+            {renderProfileContent()}
+            
+            {/* Action Buttons */}
+            <div className="flex items-center justify-between">
+              <Button
+                variant="outline"
+                onClick={() => navigate("/dashboard")}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
               </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-destructive" />
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="flex items-center gap-2">
+                    <Trash2 className="h-4 w-4" />
                     Delete Account
-                  </div>
-                </AlertDialogTitle>
-                <AlertDialogDescription className="space-y-2">
-                  <p>
-                    Are you absolutely sure you want to delete your account? This action cannot be undone.
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    All your data will be permanently removed from our servers.
-                  </p>
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                >
-                  {isDeleting ? "Deleting..." : "Delete Account"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-5 w-5 text-destructive" />
+                        Delete Account
+                      </div>
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="space-y-2">
+                      <p>
+                        Are you absolutely sure you want to delete your account? This action cannot be undone.
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        All your data will be permanently removed from our servers.
+                      </p>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      {isDeleting ? "Deleting..." : "Delete Account"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+
+          {/* Transaction History */}
+          <div className="">
+            <TransactionHistory userId={user?._id} />
+          </div>
         </div>
       </div>
     </div>

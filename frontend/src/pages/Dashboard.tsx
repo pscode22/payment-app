@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Users as UsersIcon } from "lucide-react";
 import useSWR from "swr";
 
@@ -10,8 +9,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getAllOtherUsers, getUserBalance } from "@/services/api/user.api";
 import { useDebounce } from "@/hooks/useDebounce";
 
+
 export default function Dashboard() {
-  const navigate = useNavigate();
 
   // Load initial query from localStorage (safely)
   const [query, setQuery] = useState<string>(() => {
@@ -53,10 +52,6 @@ export default function Dashboard() {
     () => getAllOtherUsers({ name: debouncedQuery }),
     { keepPreviousData: true, revalidateOnFocus: false }
   );
-
-  const handleSendMoney = (userId: string) => {
-    navigate(`/transfer/${userId}`);
-  };
 
   const balance = (balanceData as { balance: number })?.balance ?? 0;
 
@@ -109,7 +104,6 @@ export default function Dashboard() {
         {/* Users Section */}
         <Users
           users={usersData?.users ?? []}
-          onSendMoney={handleSendMoney}
           query={query}
           setQuery={setQuery}
           isLoading={isUsersLoading}
