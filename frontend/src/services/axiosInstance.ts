@@ -22,7 +22,6 @@ const api: AxiosInstance = axios.create({
 // Promise to queue refresh calls
 let refreshPromise: Promise<void> | null = null;
 
-
 // 📝 Public endpoints (no Authorization header)
 const publicPaths = ['/login', '/register', '/refresh'];
 
@@ -40,7 +39,6 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
-
 // 🔄 REFRESH
 const doRefresh = async (): Promise<void> => {
   const refreshToken = getRefreshToken();
@@ -49,7 +47,7 @@ const doRefresh = async (): Promise<void> => {
   const response = await axios.post<{
     accessToken: string;
     refreshToken: string;
-  }>("/auth/refresh", { refreshToken });
+  }>(`${api.defaults.baseURL}/auth/refresh`, { refreshToken });
 
   setTokens({
     accessToken: response.data.accessToken,
@@ -100,15 +98,25 @@ api.interceptors.response.use(
           ).Authorization = `Bearer ${token}`;
         }
         return api(originalRequest);
-      } catch (err) {
+      } catch (refreshError) {
+        // Only clear tokens if refresh itself failed
+        console.error('Token refresh failed:', refreshError);
         clearTokens();
-        return Promise.reject(err);
+        
+        // Optionally redirect to login
+        // window.location.href = '/signin';
+        
+        return Promise.reject(refreshError);
       }
+    }
+
+    // For other 401s or when refresh token is missing, clear tokens
+    if (status === 401 && !getRefreshToken()) {
+      clearTokens();
     }
 
     return Promise.reject(error);
   }
 );
-
 
 export default api;

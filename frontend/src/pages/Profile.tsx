@@ -59,6 +59,8 @@ export default function Profile() {
     }
   };
 
+console.log({isLoading, error, userData})
+
   const renderProfileContent = () => {
     if (isLoading) {
       return (

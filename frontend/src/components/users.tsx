@@ -2,9 +2,10 @@ import { useState } from "react";
 import { 
   Search, 
   Users as UsersIcon, 
-  Send, 
-  Filter,
+  Send,
   AlertCircle,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,8 @@ interface UsersProps {
   error?: unknown;
 }
 
+const USERS_PER_PAGE = 4;
+
 export function Users({
   users,
   onSendMoney,
@@ -32,15 +35,22 @@ export function Users({
   isLoading = false,
   error,
 }: UsersProps) {
-  const [sortBy, setSortBy] = useState<'name' | 'recent'>('name');
+  const [currentPage, setCurrentPage] = useState(1);
 
   const sortedUsers = [...users].sort((a, b) => {
-    if (sortBy === 'name') {
-      return a.firstName.localeCompare(b.firstName);
-    }
-    // For 'recent' sort, you'd use actual timestamp data
-    return 0;
+    return a.firstName.localeCompare(b.firstName);
   });
+
+  // Pagination logic
+  const totalPages = Math.ceil(sortedUsers.length / USERS_PER_PAGE);
+  const startIndex = (currentPage - 1) * USERS_PER_PAGE;
+  const paginatedUsers = sortedUsers.slice(startIndex, startIndex + USERS_PER_PAGE);
+
+  // Reset to page 1 when search changes
+  const handleSearch = (value: string) => {
+    setQuery(value);
+    setCurrentPage(1);
+  };
 
   const renderUserSkeleton = () => (
     <div className="space-y-3">
@@ -99,6 +109,42 @@ export function Users({
     </div>
   );
 
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+
+    return (
+      <div className="flex items-center justify-between pt-4 border-t">
+        <p className="text-sm text-muted-foreground">
+          Page {currentPage} of {totalPages} ({sortedUsers.length} users)
+        </p>
+        
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          
+          <span className="text-sm px-2">
+            {currentPage}
+          </span>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -112,18 +158,6 @@ export function Users({
               </Badge>
             )}
           </CardTitle>
-          
-          {users.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSortBy(sortBy === 'name' ? 'recent' : 'name')}
-              className="flex items-center gap-2"
-            >
-              <Filter className="h-4 w-4" />
-              {sortBy === 'name' ? 'Name' : 'Recent'}
-            </Button>
-          )}
         </div>
       </CardHeader>
       
@@ -135,7 +169,7 @@ export function Users({
             aria-label="Search users"
             placeholder="Search users by name..."
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => handleSearch(e.target.value)}
             className="pl-10"
           />
         </div>
@@ -149,7 +183,7 @@ export function Users({
           ) : sortedUsers.length === 0 ? (
             renderEmptyState()
           ) : (
-            sortedUsers.map((user) => (
+            paginatedUsers.map((user) => (
               <div
                 key={user._id}
                 className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
@@ -165,9 +199,6 @@ export function Users({
                     <p className="font-medium leading-none">
                       {user.firstName} {user.lastName}
                     </p>
-                    {/* <p className="text-sm text-muted-foreground">
-                      {user.email || 'User'}
-                    </p> */}
                   </div>
                 </div>
                 
@@ -184,15 +215,8 @@ export function Users({
           )}
         </div>
 
-        {/* Footer */}
-        {!isLoading && !error && sortedUsers.length > 0 && (
-          <div className="pt-3 border-t">
-            <p className="text-xs text-muted-foreground text-center">
-              Showing {sortedUsers.length} user{sortedUsers.length !== 1 ? 's' : ''}
-              {query && ` matching "${query}"`}
-            </p>
-          </div>
-        )}
+        {/* Pagination */}
+        {!isLoading && !error && renderPagination()}
       </CardContent>
     </Card>
   );
