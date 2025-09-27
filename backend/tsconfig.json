@@ -3,8 +3,6 @@
     "target": "ES2020",
     "module": "commonjs",
     "lib": ["ES2020"],
-    "outDir": "./dist",
-    "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -24,9 +22,11 @@
     "noImplicitOverride": true,
     "exactOptionalPropertyTypes": true,
     "moduleResolution": "node",
-    "baseUrl": "./",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "baseUrl": "./src",          // ✅ important: base relative to project root
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["*"]       // ✅ now points correctly, resolves to dist after build
     }
   },
   "include": ["src/**/*"],
