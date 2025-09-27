@@ -15,7 +15,7 @@ import {
 
 // Create axios instance
 const api: AxiosInstance = axios.create({
-  baseURL: "http://localhost:3000/api/v1", // your API base
+  baseURL: import.meta.env.VITE_API_URL, // your API base
   headers: { "Content-Type": "application/json" },
 });
 
@@ -23,7 +23,7 @@ const api: AxiosInstance = axios.create({
 let refreshPromise: Promise<void> | null = null;
 
 // 📝 Public endpoints (no Authorization header)
-const publicPaths = ['/login', '/register', '/refresh'];
+const publicPaths = ["/login", "/register", "/refresh"];
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   // Check whether the URL matches any public path
@@ -74,7 +74,7 @@ api.interceptors.response.use(
     if (!error.response || !originalRequest) return Promise.reject(error);
 
     const status = error.response.status;
-    const isRefreshRequest = originalRequest.url?.includes('/refresh');
+    const isRefreshRequest = originalRequest.url?.includes("/refresh");
 
     // Only refresh if:
     //  - status is 401
@@ -100,12 +100,12 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshError) {
         // Only clear tokens if refresh itself failed
-        console.error('Token refresh failed:', refreshError);
+        console.error("Token refresh failed:", refreshError);
         clearTokens();
-        
+
         // Optionally redirect to login
         // window.location.href = '/signin';
-        
+
         return Promise.reject(refreshError);
       }
     }
