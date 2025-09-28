@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Users as UsersIcon } from "lucide-react";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 
 import { Balance } from "@/components/balance";
 import { Users } from "@/components/users";
@@ -9,9 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getAllOtherUsers, getUserBalance } from "@/services/api/user.api";
 import { useDebounce } from "@/hooks/useDebounce";
 
-
 export default function Dashboard() {
-
   // Load initial query from localStorage (safely)
   const [query, setQuery] = useState<string>(() => {
     try {
@@ -47,6 +45,7 @@ export default function Dashboard() {
     data: usersData,
     isLoading: isUsersLoading,
     error: usersError,
+    isValidating: isBalanceValidating,
   } = useSWR(
     ["user-list", debouncedQuery],
     () => getAllOtherUsers({ name: debouncedQuery }),
@@ -62,6 +61,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             {isBalanceLoading ? (
+              // Initial load shimmer
               <Card>
                 <CardContent className="p-6">
                   <Skeleton className="h-4 w-24 mb-2" />
@@ -77,7 +77,14 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             ) : (
-              <Balance value={balance} />
+              <>
+                <Balance value={balance} />
+                {isBalanceValidating && (
+                  <p className="text-xs text-muted-foreground mt-1 animate-pulse">
+                    ⏳ Updating balance...
+                  </p>
+                )}
+              </>
             )}
           </div>
 
@@ -108,6 +115,11 @@ export default function Dashboard() {
           setQuery={setQuery}
           isLoading={isUsersLoading}
           error={usersError}
+          onTransferSuccess={() => {
+            // ✅ Refresh balance and users list after transfer
+            mutate("user-balance");
+            mutate(["user-list", debouncedQuery]);
+          }}
         />
       </div>
     </div>
